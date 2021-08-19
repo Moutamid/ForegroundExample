@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "12995904888",
+    "project_id": "foreground-example",
+    "storage_bucket": "foreground-example.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:12995904888:android:5f11689511c377f8b8748d",
+        "android_client_info": {
+          "package_name": "com.moutamid.foregroundexample"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "12995904888-8515vptmu6bgoid6btbjgpcmmb4kitnt.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBGEGRSOvsvj7UYmccyGmEyXu9eVu_Hca0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "12995904888-8515vptmu6bgoid6btbjgpcmmb4kitnt.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
