@@ -33,7 +33,8 @@ public class NotificationHelper extends ContextWrapper {
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     private void createChannels() {
-        NotificationChannel notificationChannel = new NotificationChannel(CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH);
+        NotificationChannel notificationChannel = new NotificationChannel(CHANNEL_ID,
+                CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH);
         notificationChannel.enableLights(true);
         notificationChannel.enableVibration(true);
         notificationChannel.setDescription("this is the description of the channel.");
@@ -48,7 +49,8 @@ public class NotificationHelper extends ContextWrapper {
         Intent intent = new Intent(this, activityName);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 267, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 
-        Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
+        Notification notification = new NotificationCompat
+                .Builder(this, CHANNEL_ID)
 //                .setContentTitle(title)
 //                .setContentText(body)
                 .setSmallIcon(R.drawable.ic_launcher_background)

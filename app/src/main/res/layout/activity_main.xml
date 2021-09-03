@@ -27,4 +27,10 @@
         android:onClick="stopService"
         android:text="Stop Service" />
 
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/notifyBtn"
+        android:text="Send notification" />
+
 </LinearLayout>
