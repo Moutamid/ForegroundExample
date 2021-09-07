@@ -25,7 +25,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:onClick="stopService"
-        android:text="Stop Service" />
+        android:text="Ask for doze mode permission" />
 
     <Button
         android:layout_width="match_parent"

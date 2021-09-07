@@ -15,6 +15,7 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
@@ -24,7 +25,17 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.messaging.RemoteMessage;
+import com.moutamid.foregroundexample.other.Constants;
+import com.moutamid.foregroundexample.other.NotificationModel;
 import com.moutamid.foregroundexample.other.Restarter;
 import com.moutamid.foregroundexample.other.YourService;
 
@@ -53,84 +64,135 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        FirebaseMessaging.getInstance().subscribeToTopic("/topics/Enter_your_topic_name");
+
+        if (mAuth.getCurrentUser() == null) {
+            mAuth.signInWithEmailAndPassword("shayan@gmail.com", "123456")
+                    .addOnSuccessListener(new OnSuccessListener<AuthResult>() {
+                        @Override
+                        public void onSuccess(AuthResult authResult) {
+                            Toast.makeText(context, "Signed in!", Toast.LENGTH_SHORT).show();
+                            startInitService();
+                        }
+                    });
+        } else {
+            startInitService();
+        }
+
+//        FirebaseMessaging.getInstance().subscribeToTopic("/topics/Enter_your_topic_name")
+//                .addOnCompleteListener(new OnCompleteListener<Void>() {
+//                    @Override
+//                    public void onComplete(@NonNull Task<Void> task) {
+//                        if (!task.isSuccessful()){
+//                            Toast.makeText(MainActivity.this, "Failed", Toast.LENGTH_SHORT).show();
+//
+//                        }
+//                    }
+//                });
 
         editTextInput = findViewById(R.id.edit_text_input);
-
-//        startInitService();
-
-//        overrideFonts(getApplicationContext(), editTextInput.getRootView());
 
         findViewById(R.id.notifyBtn).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                String input = editTextInput.getText().toString();
 
-                if (!TextUtils.isEmpty(editTextInput.getText().toString())) {
-                    //topic has to match what the receiver subscribed to
-                    String topic = "/topics/Enter_your_topic_name";
+                if (input.isEmpty())
+                    return;
 
-                    JSONObject notification = new JSONObject();
-                    JSONObject notifcationBody = new JSONObject();
+                String key = databaseReference.child(Constants.NOTIFICATIONS).child("lu0IgTiuaCQwBhEf0kd48REYlVx1")
+                        .push().getKey();
 
-                    try {
+                NotificationModel model = new NotificationModel();
+                model.setName("Shayan");
+                model.setUid(mAuth.getUid());
+                model.setPushKey(key);
+                model.setProfileUrl("null");
+                model.setMessage(input);
 
-                        notifcationBody.put("title", "Enter_title");
-                        //Enter your notification message
-                        notifcationBody.put("message", editTextInput.getText().toString());
-                        notification.put("to", topic);
-                        notification.put("data", notifcationBody);
-                        Log.e(TAG, "try");
-
-                    } catch (JSONException e) {
-                        Log.e(TAG, "onClick: exception: " + e.getMessage().toString());
+                databaseReference.child(Constants.NOTIFICATIONS).child("lu0IgTiuaCQwBhEf0kd48REYlVx1")
+                        .child(key)
+                        .setValue(model).addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void unused) {
+                        Toast.makeText(context, "Done", Toast.LENGTH_SHORT).show();
+                        editTextInput.setText("");
                     }
-
-                    sendNotification(notification);
-                }
+                });
             }
         });
 
+//        overrideFonts(getApplicationContext(), editTextInput.getRootView());
+
+//        findViewById(R.id.notifyBtn).setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//
+//                if (!TextUtils.isEmpty(editTextInput.getText().toString())) {
+//                    //topic has to match what the receiver subscribed to
+//                    String topic = "/topics/Enter_your_topic_name";
+//
+//                    JSONObject notification = new JSONObject();
+//                    JSONObject notifcationBody = new JSONObject();
+//
+//                    try {
+//
+//                        notifcationBody.put("title", "Enter_title");
+//                        //Enter your notification message
+//                        notifcationBody.put("message", editTextInput.getText().toString());
+//                        notification.put("to", topic);
+//                        notification.put("data", notifcationBody);
+//                        Log.e(TAG, "try");
+//
+//                    } catch (JSONException e) {
+//                        Log.e(TAG, "onClick: exception: " + e.getMessage().toString());
+//                    }
+//
+//                    sendNotification(notification);
+//                }
+//            }
+//        });
+
     }
 
-    private RequestQueue requestQueue() {
-        return Volley.newRequestQueue(this.getApplicationContext());
-    }
-
-    private void sendNotification(JSONObject notification) {
-        Log.e("TAG", "sendNotification");
-
-        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(
-                FCM_API, notification, new Response.Listener<JSONObject>() {
-            @Override
-            public void onResponse(JSONObject response) {
-                Toast.makeText(MainActivity.this, "Done", Toast.LENGTH_SHORT).show();
-                Toast.makeText(MainActivity.this, response.toString(), Toast.LENGTH_SHORT).show();
-                editTextInput.setText("");
-            }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                Log.i("TAG", "onErrorResponse: Didn't work");
-                Toast.makeText(MainActivity.this, error.getMessage().toString(), Toast.LENGTH_SHORT).show();
-            }
-        }) {
-            @Override
-            public Map<String, String> getHeaders() throws AuthFailureError {
-                HashMap<String, String> params = new HashMap<>();
-                params.put("Authorization", serverKey);
-                params.put("Content-Type", contentType);
-
-//                val params = HashMap < String, String>()
-//                params[""] = serverKey
-//                params[""] = contentType
-                return params;
-
-//                return super.getHeaders();
-            }
-        };
-
-        requestQueue().add(jsonObjectRequest);
-    }
+//    private RequestQueue requestQueue() {
+//        return Volley.newRequestQueue(this.getApplicationContext());
+//    }
+//
+//    private void sendNotification(JSONObject notification) {
+//        Log.e("TAG", "sendNotification");
+//
+//        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(
+//                FCM_API, notification, new Response.Listener<JSONObject>() {
+//            @Override
+//            public void onResponse(JSONObject response) {
+//                Toast.makeText(MainActivity.this, "Done", Toast.LENGTH_SHORT).show();
+//                Toast.makeText(MainActivity.this, response.toString(), Toast.LENGTH_SHORT).show();
+//                editTextInput.setText("");
+//            }
+//        }, new Response.ErrorListener() {
+//            @Override
+//            public void onErrorResponse(VolleyError error) {
+//                Log.i("TAG", "onErrorResponse: Didn't work");
+//                Toast.makeText(MainActivity.this, error.getMessage().toString(), Toast.LENGTH_SHORT).show();
+//            }
+//        }) {
+//            @Override
+//            public Map<String, String> getHeaders() throws AuthFailureError {
+//                HashMap<String, String> params = new HashMap<>();
+//                params.put("Authorization", serverKey);
+//                params.put("Content-Type", contentType);
+//
+////                val params = HashMap < String, String>()
+////                params[""] = serverKey
+////                params[""] = contentType
+//                return params;
+//
+////                return super.getHeaders();
+//            }
+//        };
+//
+//        requestQueue().add(jsonObjectRequest);
+//    }
 
     private void startInitService() {
         mYourService = new YourService();
@@ -184,13 +246,16 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
     }
 
+    private DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference();
+    private FirebaseAuth mAuth = FirebaseAuth.getInstance();
+
     public void startService(View v) {
-        String input = editTextInput.getText().toString();
 
-        Intent serviceIntent = new Intent(this, ExampleService.class);
-        serviceIntent.putExtra("inputExtra", input);
 
-        ContextCompat.startForegroundService(this, serviceIntent);
+//        Intent serviceIntent = new Intent(this, ExampleService.class);
+//        serviceIntent.putExtra("inputExtra", input);
+//
+//        ContextCompat.startForegroundService(this, serviceIntent);
     }
 
     public void stopService(View v) {

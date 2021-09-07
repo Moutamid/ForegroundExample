@@ -1,5 +1,7 @@
 package com.moutamid.foregroundexample.other;
 
+import static com.google.firebase.database.FirebaseDatabase.getInstance;
+
 import android.app.AlarmManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -14,10 +16,21 @@ import android.os.IBinder;
 import android.os.SystemClock;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationCompat;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+import com.moutamid.foregroundexample.MainActivity;
+import com.moutamid.foregroundexample.NotificationHelper;
+
+import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -54,11 +67,52 @@ public class YourService extends Service {
         startForeground(2, notification);
     }
 
+    private DatabaseReference databaseReference = getInstance().getReference();
+    private FirebaseAuth mAuth = FirebaseAuth.getInstance();
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         super.onStartCommand(intent, flags, startId);
-        startTimer();
+//        startTimer();
+
+        databaseReference.child(Constants.NOTIFICATIONS).child(mAuth.getUid())
+                .addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        if (!snapshot.exists()) {
+                            return;
+                        }
+
+                        ArrayList<NotificationModel> notificationModelArrayList = new ArrayList<>();
+
+                        for (DataSnapshot dataSnapshot : snapshot.getChildren()) {
+
+                            NotificationModel model = dataSnapshot.getValue(NotificationModel.class);
+                            notificationModelArrayList.add(model);
+
+                        }
+
+                        for (NotificationModel model : notificationModelArrayList) {
+
+                            databaseReference.child(Constants.NOTIFICATIONS).child(mAuth.getUid())
+                                    .child(model.getPushKey())
+                                    .removeValue();
+
+                            NotificationHelper notificationHelper = new NotificationHelper(getApplicationContext());
+                            notificationHelper.sendHighPriorityNotification(
+                                    "You got a new message from: " + model.getName(),
+                                    model.getMessage(), MainActivity.class);
+
+                        }
+
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+
+                    }
+                });
+
         return START_STICKY;
     }
 
@@ -66,7 +120,7 @@ public class YourService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        stoptimertask();
+//        stoptimertask();
 
         Intent broadcastIntent = new Intent();
         broadcastIntent.setAction("restartservice");
