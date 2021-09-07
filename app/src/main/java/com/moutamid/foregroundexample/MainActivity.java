@@ -104,6 +104,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onResponse(JSONObject response) {
                 Toast.makeText(MainActivity.this, "Done", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, response.toString(), Toast.LENGTH_SHORT).show();
                 editTextInput.setText("");
             }
         }, new Response.ErrorListener() {
